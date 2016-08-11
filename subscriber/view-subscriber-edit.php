@@ -1,7 +1,14 @@
 <?php if(preg_match('#' . basename(__FILE__) . '#', $_SERVER['PHP_SELF'])) { die('You are not allowed to call this page directly.'); } ?>
 <div class="wrap">
 <?php
-$did = isset($_GET['did']) ? mysql_real_escape_string($_GET['did']) : '0';
+global $wpdb;
+$db_user   = $wpdb->dbuser; //データベース接続ユーザーの取得
+$db_passwd = $wpdb->dbpassword; //データベース接続用パスワードの取得
+$db_host   = $wpdb->dbhost; //データベースホストの取得
+$db_name   = $wpdb->dbname;  //使用するデータベース名
+//$link = new wpdb($db_user, $db_passwd, $db_name, $db_host);
+$link = mysqli_connect($db_host, $db_user, $db_passwd, $db_name );
+$did = isset($_GET['did']) ? mysqli_real_escape_string($link, $_GET['did']) : '0';
 $search = isset($_GET['search']) ? htmlspecialchars($_GET['search'], ENT_QUOTES, 'UTF-8') : 'A,B,C';
 
 // First check if ID exist with requested ID
@@ -22,7 +29,7 @@ else
 	$eemail_errors = array();
 	$eemail_success = '';
 	$eemail_error_found = FALSE;
-	
+
 	$sSql = $wpdb->prepare("
 		SELECT *
 		FROM `".WP_eemail_TABLE_SUB."`
@@ -33,7 +40,7 @@ else
 	);
 	$data = array();
 	$data = $wpdb->get_row($sSql, ARRAY_A);
-	
+
 	// Preset the form fields
 	$form = array(
 		'eemail_name_sub' => $data['eemail_name_sub'],
@@ -47,7 +54,7 @@ if (isset($_POST['eemail_form_submit']) && $_POST['eemail_form_submit'] == 'yes'
 {
 	//	Just security thingy that wordpress offers us
 	check_admin_referer('eemail_form_edit');
-	
+
 	$form['eemail_email_sub'] = isset($_POST['eemail_email_sub']) ? $_POST['eemail_email_sub'] : '';
 	if ($form['eemail_email_sub'] == '')
 	{
@@ -60,7 +67,7 @@ if (isset($_POST['eemail_form_submit']) && $_POST['eemail_form_submit'] == 'yes'
 
 	//	No errors found, we can add this Group to the table
 	if ($eemail_error_found == FALSE)
-	{	
+	{
 		$sSql = $wpdb->prepare(
 				"UPDATE `".WP_eemail_TABLE_SUB."`
 				SET `eemail_email_sub` = %s,
@@ -71,7 +78,7 @@ if (isset($_POST['eemail_form_submit']) && $_POST['eemail_form_submit'] == 'yes'
 				array($form['eemail_email_sub'], $form['eemail_name_sub'], $form['eemail_status_sub'], $did)
 			);
 		$wpdb->query($sSql);
-		
+
 		$eemail_success = __('Email was successfully updated.', 'email-newsletter');
 	}
 }

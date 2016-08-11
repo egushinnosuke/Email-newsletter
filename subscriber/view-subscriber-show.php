@@ -4,8 +4,15 @@
 $search = isset($_GET['search']) ? htmlspecialchars($_GET['search'], ENT_QUOTES, 'UTF-8') : 'A,B,C';
 if (isset($_POST['frm_eemail_display']) && $_POST['frm_eemail_display'] == 'yes')
 {
-	$did = isset($_GET['did']) ? mysql_real_escape_string($_GET['did']) : '0';
-	
+	global $wpdb;
+	$db_user   = $wpdb->dbuser; //データベース接続ユーザーの取得
+	$db_passwd = $wpdb->dbpassword; //データベース接続用パスワードの取得
+	$db_host   = $wpdb->dbhost; //データベースホストの取得
+	$db_name   = $wpdb->dbname;  //使用するデータベース名
+	//$link = new wpdb($db_user, $db_passwd, $db_name, $db_host);
+	$link = mysqli_connect($db_host, $db_user, $db_passwd, $db_name );
+	$did = isset($_GET['did']) ? mysqli_real_escape_string($link, $_GET['did']) : '0';
+
 	$eemail_success = '';
 	$eemail_success_msg = FALSE;
 	if (isset($_POST['frm_eemail_bulkaction']) && $_POST['frm_eemail_bulkaction'] != 'delete' && $_POST['frm_eemail_bulkaction'] != 'resend')
@@ -18,7 +25,7 @@ if (isset($_POST['frm_eemail_display']) && $_POST['frm_eemail_display'] == 'yes'
 		);
 		$result = '0';
 		$result = $wpdb->get_var($sSql);
-		
+
 		if ($result != '1')
 		{
 			?>
@@ -34,21 +41,21 @@ if (isset($_POST['frm_eemail_display']) && $_POST['frm_eemail_display'] == 'yes'
 			{
 				//	Just security thingy that wordpress offers us
 				check_admin_referer('eemail_form_show');
-				
+
 				//	Delete selected record from the table
 				$sSql = $wpdb->prepare("DELETE FROM `".WP_eemail_TABLE_SUB."`
 						WHERE `eemail_id_sub` = %d
 						LIMIT 1", $did);
 				$wpdb->query($sSql);
-				
+
 				//	Set success message
 				$eemail_success_msg = TRUE;
 				$eemail_success = __('Selected record was successfully deleted.', 'email-newsletter');
 			}
-			
+
 			if (isset($_GET['ac']) && $_GET['ac'] == 'resend' && isset($_GET['did']) && $_GET['did'] != '')
 			{
-				$did = isset($_GET['did']) ? mysql_real_escape_string($_GET['did']) : '0';
+				$did = isset($_GET['did']) ? mysqli_real_escape_string($link, $_GET['did']) : '0';
 				ViewSubscriberResendEmail($did);
 				$eemail_success_msg = TRUE;
 				$eemail_success  = __('Confirmation email resent successfully.', 'email-newsletter');
@@ -58,12 +65,12 @@ if (isset($_POST['frm_eemail_display']) && $_POST['frm_eemail_display'] == 'yes'
 	else
 	{
 		check_admin_referer('eemail_form_show');
-		
+
 		if (isset($_POST['frm_eemail_bulkaction']) && $_POST['frm_eemail_bulkaction'] == 'delete')
 		{
 			$chk_delete = $_POST['chk_delete'];
 			if(!empty($chk_delete))
-			{			
+			{
 				$count = count($chk_delete);
 				for($i=0; $i<$count; $i++)
 				{
@@ -71,7 +78,7 @@ if (isset($_POST['frm_eemail_display']) && $_POST['frm_eemail_display'] == 'yes'
 					$sql = "delete FROM ".WP_eemail_TABLE_SUB." WHERE eemail_id_sub=".$del_id." Limit 1";
 					$wpdb->get_results($sql);
 				}
-				
+
 				//	Set success message
 				$eemail_success_msg = TRUE;
 				$eemail_success = __($count . ' Selected record was successfully deleted.', 'email-newsletter');
@@ -89,7 +96,7 @@ if (isset($_POST['frm_eemail_display']) && $_POST['frm_eemail_display'] == 'yes'
 		{
 			$chk_delete = $_POST['chk_delete'];
 			if(!empty($chk_delete))
-			{			
+			{
 				$count = count($chk_delete);
 				for($i=0; $i<$count; $i++)
 				{
@@ -97,7 +104,7 @@ if (isset($_POST['frm_eemail_display']) && $_POST['frm_eemail_display'] == 'yes'
 					ViewSubscriberResendEmail($del_id);
 					$eemail_success  = __('Confirmation email resent successfully.', 'email-newsletter');
 				}
-				
+
 				//	Set success message
 				$eemail_success_msg = TRUE;
 				$eemail_success = __($count . ' Confirmation emails resent successfully.', 'email-newsletter');
@@ -112,7 +119,7 @@ if (isset($_POST['frm_eemail_display']) && $_POST['frm_eemail_display'] == 'yes'
 			}
 		}
 	}
-	
+
 	if ($eemail_success_msg == TRUE)
 	{
 		?>
@@ -136,7 +143,7 @@ if (isset($_POST['frm_eemail_display']) && $_POST['frm_eemail_display'] == 'yes'
 		{
 			$array = explode(',', $search);
 			$length = count($array);
-			for ($i = 0; $i < $length; $i++) 
+			for ($i = 0; $i < $length; $i++)
 			{
 				if(@$i == 0)
 				{
@@ -155,21 +162,21 @@ if (isset($_POST['frm_eemail_display']) && $_POST['frm_eemail_display'] == 'yes'
 		?>
 	<div class="tablenav">
 		<span style="text-align:left;">
-			<a class="button add-new-h2" href="admin.php?page=view-subscriber&search=A,B,C">A,B,C</a>&nbsp;&nbsp; 
-			<a class="button add-new-h2" href="admin.php?page=view-subscriber&search=D,E,F">D,E,F</a>&nbsp;&nbsp; 
-			<a class="button add-new-h2" href="admin.php?page=view-subscriber&search=G,H,I">G,H,I</a>&nbsp;&nbsp; 
-			<a class="button add-new-h2" href="admin.php?page=view-subscriber&search=J,K,L">J,K,L</a>&nbsp;&nbsp; 
-			<a class="button add-new-h2" href="admin.php?page=view-subscriber&search=M,N,O">M,N,O</a>&nbsp;&nbsp; 
-			<a class="button add-new-h2" href="admin.php?page=view-subscriber&search=P,Q,R">P,Q,R</a>&nbsp;&nbsp; 
-			<a class="button add-new-h2" href="admin.php?page=view-subscriber&search=S,T,U">S,T,U</a>&nbsp;&nbsp; 
-			<a class="button add-new-h2" href="admin.php?page=view-subscriber&search=V,W,X,Y,Z">V,W,X,Y,Z</a>&nbsp;&nbsp; 
-			<a class="button add-new-h2" href="admin.php?page=view-subscriber&search=0,1,2,3,4,5,6,7,8,9">0-9</a> 
+			<a class="button add-new-h2" href="admin.php?page=view-subscriber&search=A,B,C">A,B,C</a>&nbsp;&nbsp;
+			<a class="button add-new-h2" href="admin.php?page=view-subscriber&search=D,E,F">D,E,F</a>&nbsp;&nbsp;
+			<a class="button add-new-h2" href="admin.php?page=view-subscriber&search=G,H,I">G,H,I</a>&nbsp;&nbsp;
+			<a class="button add-new-h2" href="admin.php?page=view-subscriber&search=J,K,L">J,K,L</a>&nbsp;&nbsp;
+			<a class="button add-new-h2" href="admin.php?page=view-subscriber&search=M,N,O">M,N,O</a>&nbsp;&nbsp;
+			<a class="button add-new-h2" href="admin.php?page=view-subscriber&search=P,Q,R">P,Q,R</a>&nbsp;&nbsp;
+			<a class="button add-new-h2" href="admin.php?page=view-subscriber&search=S,T,U">S,T,U</a>&nbsp;&nbsp;
+			<a class="button add-new-h2" href="admin.php?page=view-subscriber&search=V,W,X,Y,Z">V,W,X,Y,Z</a>&nbsp;&nbsp;
+			<a class="button add-new-h2" href="admin.php?page=view-subscriber&search=0,1,2,3,4,5,6,7,8,9">0-9</a>
 		<span>
 		<span style="float:right;">
-			<a class="button add-new-h2" href="<?php echo get_option('siteurl'); ?>/wp-admin/admin.php?page=view-subscriber&amp;ac=add"><?php _e('Add Email', 'email-newsletter'); ?></a> 
-			<a class="button add-new-h2" href="<?php echo get_option('siteurl'); ?>/wp-admin/admin.php?page=view-subscriber&amp;ac=add"><?php _e('Import Email', 'email-newsletter'); ?></a> 
-			<a class="button add-new-h2" href="<?php echo get_option('siteurl'); ?>/wp-admin/admin.php?page=export-subscriber"><?php _e('Export Email (CSV)', 'email-newsletter'); ?></a> 
-			<a class="button add-new-h2" target="_blank" href="<?php echo WP_eemail_FAV; ?>"><?php _e('Help', 'email-newsletter'); ?></a> 
+			<a class="button add-new-h2" href="<?php echo get_option('siteurl'); ?>/wp-admin/admin.php?page=view-subscriber&amp;ac=add"><?php _e('Add Email', 'email-newsletter'); ?></a>
+			<a class="button add-new-h2" href="<?php echo get_option('siteurl'); ?>/wp-admin/admin.php?page=view-subscriber&amp;ac=add"><?php _e('Import Email', 'email-newsletter'); ?></a>
+			<a class="button add-new-h2" href="<?php echo get_option('siteurl'); ?>/wp-admin/admin.php?page=export-subscriber"><?php _e('Export Email (CSV)', 'email-newsletter'); ?></a>
+			<a class="button add-new-h2" target="_blank" href="<?php echo WP_eemail_FAV; ?>"><?php _e('Help', 'email-newsletter'); ?></a>
 		</span>
     </div>
     <form name="frm_eemail_display" method="post" onsubmit="return _subscribermultipledelete()">
@@ -195,19 +202,19 @@ if (isset($_POST['frm_eemail_display']) && $_POST['frm_eemail_display'] == 'yes'
           </tr>
         </tfoot>
         <tbody>
-          <?php 
+          <?php
 			$i = 0;
 			$displayisthere = FALSE;
 			if(count($myData) > 0)
 			{
 				$i = 1;
 				foreach ($myData as $data)
-				{					
+				{
 					?>
           <tr class="<?php if ($i&1) { echo'alternate'; } else { echo ''; }?>">
             <td align="left"><input name="chk_delete[]" id="chk_delete[]" type="checkbox" value="<?php echo $data['eemail_id_sub'] ?>" /></td>
             <td><?php echo $i; ?></td>
-            <td><?php echo $data['eemail_email_sub']; ?></td>        
+            <td><?php echo $data['eemail_email_sub']; ?></td>
             <td>
 			<?php
 			if($data['eemail_status_sub'] == "YES")
@@ -237,14 +244,14 @@ if (isset($_POST['frm_eemail_display']) && $_POST['frm_eemail_display'] == 'yes'
 			?>
 			</td>
 			<td><?php echo $data['eemail_id_sub']; ?></td>
-			<td><div> 
-			<span class="edit"><a title="Edit" href="<?php echo get_option('siteurl'); ?>/wp-admin/admin.php?page=view-subscriber&amp;ac=edit&search=<?php echo $search; ?>&amp;did=<?php echo $data['eemail_id_sub']; ?>"><?php _e('Edit', 'email-newsletter'); ?></a> | </span> 
+			<td><div>
+			<span class="edit"><a title="Edit" href="<?php echo get_option('siteurl'); ?>/wp-admin/admin.php?page=view-subscriber&amp;ac=edit&search=<?php echo $search; ?>&amp;did=<?php echo $data['eemail_id_sub']; ?>"><?php _e('Edit', 'email-newsletter'); ?></a> | </span>
 			<span class="trash"><a onClick="javascript:_eemail_delete('<?php echo $data['eemail_id_sub']; ?>','<?php echo $search; ?>')" href="javascript:void(0);"><?php _e('Delete', 'email-newsletter'); ?></a></span>
 			<?php
 			if($data['eemail_status_sub'] != "CON")
 			{
 				?>
-					<span class="edit"> | <a onClick="javascript:_eemail_resend('<?php echo $data['eemail_id_sub']; ?>','<?php echo $search; ?>')" href="javascript:void(0);"><?php _e('Resend Confirmation', 'email-newsletter'); ?></a></span> 
+					<span class="edit"> | <a onClick="javascript:_eemail_resend('<?php echo $data['eemail_id_sub']; ?>','<?php echo $search; ?>')" href="javascript:void(0);"><?php _e('Resend Confirmation', 'email-newsletter'); ?></a></span>
 				<?php
 			}
 			?>
@@ -253,7 +260,7 @@ if (isset($_POST['frm_eemail_display']) && $_POST['frm_eemail_display'] == 'yes'
           </tr>
           <?php
 					$i = $i+1;
-				} 
+				}
 			}
 			else
 			{
@@ -261,7 +268,7 @@ if (isset($_POST['frm_eemail_display']) && $_POST['frm_eemail_display'] == 'yes'
 				<tr>
 					<td colspan="6" align="center"><?php _e('No records available.', 'email-newsletter'); ?></td>
 				</tr>
-				<?php 
+				<?php
 			}
 			?>
         </tbody>
@@ -281,10 +288,10 @@ if (isset($_POST['frm_eemail_display']) && $_POST['frm_eemail_display'] == 'yes'
 			<input type="submit" value="Apply" class="button action" id="doaction" name="">
 		</div>
 		<div class="alignright">
-			<a class="button add-new-h2" href="<?php echo get_option('siteurl'); ?>/wp-admin/admin.php?page=view-subscriber&amp;ac=add"><?php _e('Add Email', 'email-newsletter'); ?></a> 
-			<a class="button add-new-h2" href="<?php echo get_option('siteurl'); ?>/wp-admin/admin.php?page=view-subscriber&amp;ac=add"><?php _e('Import Email', 'email-newsletter'); ?></a> 
-			<a class="button add-new-h2" href="<?php echo get_option('siteurl'); ?>/wp-admin/admin.php?page=export-subscriber"><?php _e('Export Email (CSV)', 'email-newsletter'); ?></a> 
-			<a class="button add-new-h2" target="_blank" href="<?php echo WP_eemail_FAV; ?>"><?php _e('Help', 'email-newsletter'); ?></a> 
+			<a class="button add-new-h2" href="<?php echo get_option('siteurl'); ?>/wp-admin/admin.php?page=view-subscriber&amp;ac=add"><?php _e('Add Email', 'email-newsletter'); ?></a>
+			<a class="button add-new-h2" href="<?php echo get_option('siteurl'); ?>/wp-admin/admin.php?page=view-subscriber&amp;ac=add"><?php _e('Import Email', 'email-newsletter'); ?></a>
+			<a class="button add-new-h2" href="<?php echo get_option('siteurl'); ?>/wp-admin/admin.php?page=export-subscriber"><?php _e('Export Email (CSV)', 'email-newsletter'); ?></a>
+			<a class="button add-new-h2" target="_blank" href="<?php echo WP_eemail_FAV; ?>"><?php _e('Help', 'email-newsletter'); ?></a>
 		</div>
     </div>
 	</form>

@@ -9,9 +9,16 @@ $blogname = get_option('blogname');
 </head>
 <body>
 <?php
-$form['rand'] = isset($_GET['rand']) ? mysql_real_escape_string($_GET['rand']) : '';
-$form['user'] = isset($_GET['user']) ? mysql_real_escape_string($_GET['user']) : '';
-$form['reff'] = isset($_GET['reff']) ? mysql_real_escape_string($_GET['reff']) : '';
+global $wpdb;
+$db_user   = $wpdb->dbuser; //データベース接続ユーザーの取得
+$db_passwd = $wpdb->dbpassword; //データベース接続用パスワードの取得
+$db_host   = $wpdb->dbhost; //データベースホストの取得
+$db_name   = $wpdb->dbname;  //使用するデータベース名
+//$link = new wpdb($db_user, $db_passwd, $db_name, $db_host);
+$link = mysqli_connect($db_host, $db_user, $db_passwd, $db_name );
+$form['rand'] = isset($_GET['rand']) ? mysqli_real_escape_string($link, $_GET['rand']) : '';
+$form['user'] = isset($_GET['user']) ? mysqli_real_escape_string($link, $_GET['user']) : '';
+$form['reff'] = isset($_GET['reff']) ? mysqli_real_escape_string($link, $_GET['reff']) : '';
 
 if ($form['rand'] == '' || $form['user'] == '' || $form['reff'] == '')
 {
@@ -47,7 +54,7 @@ else
 		  $sSql = $wpdb->prepare("UPDATE ".WP_eemail_TABLE_SUB."
 				SET eemail_status_sub = 'UNS' WHERE eemail_id_sub = %d and eemail_email_sub = '%s' LIMIT 1",array($form['rand'], $form['user']));
 			$wpdb->query($sSql);
-			
+
 			$message = get_option('eemail_msgdis_3');
 			$message = str_replace("\r\n", "<br />", $message);
 			if($message == "")

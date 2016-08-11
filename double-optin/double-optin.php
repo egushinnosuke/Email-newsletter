@@ -9,9 +9,16 @@ $blogname = get_option('blogname');
 </head>
 <body>
 <?php
-$form['rand'] = isset($_GET['rand']) ? mysql_real_escape_string($_GET['rand']) : '';
-$form['user'] = isset($_GET['user']) ? mysql_real_escape_string($_GET['user']) : '';
-$form['guid'] = isset($_GET['guid']) ? mysql_real_escape_string($_GET['guid']) : '';
+global $wpdb;
+$db_user   = $wpdb->dbuser; //データベース接続ユーザーの取得
+$db_passwd = $wpdb->dbpassword; //データベース接続用パスワードの取得
+$db_host   = $wpdb->dbhost; //データベースホストの取得
+$db_name   = $wpdb->dbname;  //使用するデータベース名
+//$link = new wpdb($db_user, $db_passwd, $db_name, $db_host);
+$link = mysqli_connect($db_host, $db_user, $db_passwd, $db_name );
+$form['rand'] = isset($_GET['rand']) ? mysqli_real_escape_string($link, $_GET['rand']) : '';
+$form['user'] = isset($_GET['user']) ? mysqli_real_escape_string($link, $_GET['user']) : '';
+$form['guid'] = isset($_GET['guid']) ? mysqli_real_escape_string($link, $_GET['guid']) : '';
 
 if ($form['rand'] == '' || $form['user'] == '' || $form['guid'] == '')
 {
@@ -51,20 +58,20 @@ else
 			LIMIT 1",
 			array($form['rand'], $form['user']));
 		$wpdb->query($sSql);
-		
+
 		if(trim($eemail_user_email_option) == "YES")
 		{
 			$headers = "MIME-Version: 1.0" . "\r\n";
 			$headers .= "Content-type:text/html;charset=utf-8" . "\r\n";
 			$headers .= "From: \"$eemail_from_name\" <$eemail_from_email>\n";
-		
+
 			$to_email = $form['user'];
 			$to_subject = get_option('eemail_user_email_subject');
 			$to_message = get_option('eemail_user_email_content');
 			$to_message = str_replace("\r\n", "<br />", $to_message);
 			@wp_mail($to_email, $to_subject, $to_message, $headers);
 		}
-		
+
 		$message = get_option('eemail_msgdis_1');
 		$message = str_replace("\r\n", "<br />", $message);
 		if($message == "")
